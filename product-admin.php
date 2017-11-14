@@ -43,10 +43,12 @@ $psw = '12';
             <button type="submit" class="btn btn-default">提交</button>
         </form>
     </div>
-        <?php } ?>
+        <?php } else{
+            $_SESSION['psw']=time();
+        } ?>
     <?php } else {?>
 
-
+        
 
     <?php }?>
 
