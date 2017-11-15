@@ -13,7 +13,7 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
         echo '<p class="text-error">请填写栏目名和uri</p>';
     }else {
         //写入数据库
-        $padmin -> AddCate();
+        var_dump($padmin -> AddCate()) ;
     }
 }
 ?>
@@ -55,6 +55,7 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
     </div>
         <?php } else{
             $_SESSION['psw']=time();
+            echo "<script language=JavaScript> location.replace(location.href);</script>";
         } ?>
     <?php } else {
     //读取分类表
@@ -170,7 +171,10 @@ class Padmin
     {
         $cate_name = htmlspecialchars( str_replace('\'','"', strip_tags( trim($_POST['cate_name']) ) ));
         $cate_uri = htmlspecialchars( str_replace('\'','"', strip_tags( trim($_POST['cate_uri']) ) ));
-        $sql = 'INSERT INTO  Cate '
+        $sql = 'INSERT INTO Cate ("name", "uri") VALUES ("'.$cate_name.'","'.$cate_uri.'");';
+        //,'weight'
+        return $this->dbh->exec($sql);
+
     }
 }
 
