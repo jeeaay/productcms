@@ -13,7 +13,9 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
         echo '<p class="text-error">请填写栏目名和uri</p>';
     }else {
         //写入数据库
-        var_dump($padmin -> AddCate()) ;
+        if ($padmin -> AddCate()) {
+            echo '<p class="text-success">分类添加成功</p>';
+        }
     }
 }
 ?>
@@ -76,14 +78,17 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
             <?php 
                 //遍历现有分类
                 if (!empty($cateList)) {
+                    foreach ($cateList as $value) {
             ?>
                 <tr>
-                    <th scope="row"><?=$cateList['id']?></th>
-                    <td><?=$cateList['name']?></td>
-                    <td><?=$cateList['uri']?></td>
-                    <td><?=$cateList['weight']?></td>
+                    <th scope="row"><?=$value['id']?></th>
+                    <td><?=$value['name']?></td>
+                    <td><?=$value['uri']?></td>
+                    <td><?=$value['weight']?></td>
                 </tr>
-            <?php }else {?>
+            <?php   }
+                }else {
+                ?>
                 <tr class="warning"><td colspan="4">暂无分类</td></tr>
             <?php } ?>
                 <tr><td colspan="4">添加分类:</td></tr>
@@ -165,7 +170,7 @@ class Padmin
     public function GetCateList()
     {
         $sql = "SELECT * FROM Cate";
-        $this->dbh->query($sql);
+        return $this->dbh->query($sql);
     }
     public function AddCate()
     {
