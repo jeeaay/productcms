@@ -7,6 +7,10 @@
  */
 session_start();
 $psw = '12';
+$padmin = new Padmin();
+if (!file_exists("product.db")) {
+    $padmin->CreateDb();
+}
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -46,7 +50,10 @@ $psw = '12';
         <?php } else{
             $_SESSION['psw']=time();
         } ?>
-    <?php } else {?>
+    <?php } else {
+            
+        
+    ?>
 
         
 
@@ -58,3 +65,64 @@ $psw = '12';
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   </body>
 </html>
+<?php
+class Padmin
+{
+    function __construct($path = "product.db")
+    {
+        if (!file_exists("product.db")) {
+            $sql ="
+            CREATE TABLE 'Cate' (
+                'ID'  INTEGER PRIMARY KEY AUTOINCREMENT,
+                'name'  TEXT,
+                'uri' TEXT,
+                'weight' INTEGER DEFAULT 0
+            );
+            CREATE TABLE 'Product' (
+                'ID'  INTEGER PRIMARY KEY AUTOINCREMENT,
+                'name'  TEXT,
+                'cate_id' INTEGER,
+                'intro' TEXT,
+                'application' TEXT,
+                'material' TEXT,
+                'overview' TEXT,
+                'principle' TEXT,
+                'specification' TEXT,
+                'custom1' TEXT,
+                'custom2' TEXT,
+                'custom3' TEXT,
+                'custom4' TEXT,
+                'custom5' TEXT,
+                'custom6' TEXT
+            );
+            ";
+        }
+        //使用PDO连接数据库
+        try
+		{
+			$this->dbh=new PDO('sqlite:'.$path);
+		}
+		catch(PDOException $e)
+		{
+            var_dump($e);
+            exit('error!');
+			try
+			{
+				$this->dbh=new PDO('sqlite2:'.$path);
+			}
+			catch(PDOException $e)
+			{
+                var_dump($e);
+				exit('error!');
+			}
+		}
+        if (!empty($sql)) {
+            echo "$sql";
+            echo "<br>";
+            var_dump($this->dbh->exec($sql));
+            //$this->dbh->exec($sql);
+        }
+    }
+}
+
+?>
