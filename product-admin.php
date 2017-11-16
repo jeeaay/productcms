@@ -8,16 +8,6 @@
 session_start();
 $psw = '12';
 $padmin = new Padmin();
-if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
-    if (trim($_POST['cate_name']) == "" || trim($_POST['cate_uri']) == "" ) {
-        echo '<p class="text-error">请填写栏目名和uri</p>';
-    }else {
-        //写入数据库
-        if ($padmin -> AddCate()) {
-            echo '<p class="text-success">分类添加成功</p>';
-        }
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -60,6 +50,22 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
             echo "<script language=JavaScript> location.replace(location.href);</script>";
         } ?>
     <?php } else {
+    //路由部分开始
+    //栏目添加
+    if ( isset($_POST['cate_name']) ) {
+        if (trim($_POST['cate_name']) == "" ) {
+            echo '<p class="text-danger">请填写栏目名和uri</p>';
+        }else {
+            //写入数据库
+            echo $padmin -> AddCate();
+        }
+    }
+    //栏目删除
+    if ( isset($_GET['del']) && is_numeric($_GET['del']) ) {
+        echo $padmin -> DelCate();
+    }
+    
+    //展示部分开始
     //读取分类表
     $cateList = $padmin->GetCateList();
     ?>
@@ -72,6 +78,7 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
                     <th>分类名</th>
                     <th>栏目uri</th>
                     <th>权重排序</th>
+                    <th>删除</th>
                 </tr>
             </thead>
             <tbody>
@@ -84,19 +91,20 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
                     <th scope="row"><?=$value['id']?></th>
                     <td><?=$value['name']?></td>
                     <td><?=$value['uri']?></td>
-                    <td><?=$value['weight']?></td>
+                    <td><input class="weight" type="text" value="<?=$value['weight']?>" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))"></td>
+                    <td><a href="?del=<?=$value['id']?>">删除</a></td>
                 </tr>
             <?php   }
                 }else {
                 ?>
                 <tr class="warning"><td colspan="4">暂无分类</td></tr>
             <?php } ?>
-                <tr><td colspan="4">添加分类:</td></tr>
+                <tr><td colspan="5">添加分类:</td></tr>
                 <form method="post">
                 <tr class="info">
                     <th scope="row">添加分类</th>
                     <td><input name="cate_name" type="text" placeholder="分类名称"></td>
-                    <td><input name="cate_uri" type="text" placeholder="尽量使用英文、下划线_、减号-，Linux主机区分大小写"></td>
+                    <td colspan="2"><input name="cate_uri" type="text" placeholder="尽量使用英文,会被urlencode转码"></td>
                     <td><input type="submit" value="提交"></td>
                 </tr>
                 </form>
@@ -111,6 +119,14 @@ if ( isset($_POST['cate_name']) && isset($_POST['cate_uri'])) {
     <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script>
+        $(function () {
+            $(".weight").keyup(function () { 
+                var data = { 'weight': parseInt( $(".weight").val() ) };
+                $.post( window.location.href, data );
+            });
+        })
+    </script>
   </body>
 </html>
 <?php
@@ -122,8 +138,8 @@ class Padmin
             $sql ="
             CREATE TABLE 'Cate' (
                 'id'  INTEGER PRIMARY KEY AUTOINCREMENT,
-                'name'  TEXT,
-                'uri' TEXT,
+                'name'  TEXT UNIQUE,
+                'uri' TEXT UNIQUE,
                 'weight' INTEGER DEFAULT 0
             );
             CREATE TABLE 'Product' (
@@ -175,11 +191,39 @@ class Padmin
     public function AddCate()
     {
         $cate_name = htmlspecialchars( str_replace('\'','"', strip_tags( trim($_POST['cate_name']) ) ));
-        $cate_uri = htmlspecialchars( str_replace('\'','"', strip_tags( trim($_POST['cate_uri']) ) ));
-        $sql = 'INSERT INTO Cate ("name", "uri") VALUES ("'.$cate_name.'","'.$cate_uri.'");';
-        //,'weight'
-        return $this->dbh->exec($sql);
+        if (empty($_POST['cate_uri'])) {
+            $cate_uri = urlencode($cate_name);
+        }else {
+            $cate_uri = urlencode( htmlspecialchars( str_replace( '\'','"', strip_tags( trim($_POST['cate_uri']) ) ) ) );
+        }
+        //当前id
+        $this->dbh->query("select seq from sqlite_sequence where name='Cate'");
+        if ( $res=$this->dbh->query("select seq from sqlite_sequence where name='Cate'") ) {
+            $weight = ( $res->fetch()[0] + 1 )* 5;
+        }else {
+            $weight = 0;
+        }
 
+        $sql = 'INSERT INTO Cate ("name", "uri" ,"weight") VALUES ("'.$cate_name.'","'.$cate_uri.'","'.$weight.'");';
+        //,"weight"
+
+        if ($this->dbh->exec($sql)) {
+            return '<p class="text-success">分类 '.$_POST['cate_name'].' 添加成功</p>';
+        }else {
+            return '<p class="text-danger">分类 '.$_POST['cate_name'].' 添加失败</p>';
+        }
+
+    }
+    public function DelCate()
+    {
+        if (is_numeric($_GET['del'])) {
+            $sql = 'DELETE FROM Cate WHERE id = '.$_GET['del'].';';
+            if ($this->dbh->exec($sql)) {
+                return '<p class="text-success">分类'.$_GET['del'].'删除成功</p>';
+            }else {
+                return '<p class="text-danger">删除失败</p>';
+            }
+        }
     }
 }
 
