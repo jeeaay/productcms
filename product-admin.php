@@ -8,6 +8,13 @@
 session_start();
 $psw = '12';
 $padmin = new Padmin();
+//权重修改
+if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST['cateweight']) ) {
+    $padmin -> EditWeight();
+    header('Content-type:text/json');
+    exit(json_encode(['error'=>false]));
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -15,13 +22,10 @@ $padmin = new Padmin();
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap -->
     <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <style>
     .cate input{width:95%}
     </style>
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
       <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
@@ -49,7 +53,91 @@ $padmin = new Padmin();
             $_SESSION['psw']=time();
             echo "<script language=JavaScript> location.replace(location.href);</script>";
         } ?>
-    <?php } else {
+    <?php } elseif(@$_GET['pro']=="add") {
+        if ( isset($_POST) ) {
+            # code...
+        }
+        
+    ?>
+        <div class="container-fluid">
+            <form method="post" class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="control-label">产品名称 name</label>
+                        <input name="pro-name" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">uri</label>
+                        <input name="pro-uri" type="text" class="form-control" placeholder="可以不填写，尽量使用英文,会被urlencode转码">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="control-label">简介 intro</label>
+                        <textarea name="pro-intro" rows="3" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">应用范围 application</label>
+                        <input name="pro-application" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">物料 material</label>
+                        <input name="pro-material" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">产品概览 overview</label>
+                        <textarea name="pro-overview" rows="3" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">工作原理 principle</label>
+                        <textarea name="pro-principle" rows="3" class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label class="control-label">栏目分类</label>
+                        <select name="pro-cate" class="form-control">
+                            <option>1</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="control-label">技术参数 specification</label>
+                        <textarea name="pro-specification" rows="2" class="form-control"></textarea>
+                    </div>
+                    <p class="text-primary">下面是自定义字段</p>
+                    <div class="form-group">
+                        <label class="control-label">custom1</label>
+                        <input name="pro-custom1" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">custom2</label>
+                        <input name="pro-custom2" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">custom3</label>
+                        <input name="pro-custom3" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">custom4</label>
+                        <input name="pro-custom4" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">custom5</label>
+                        <input name="pro-custom5" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">custom6</label>
+                        <input name="pro-custom6" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="col-sm-12">
+                    <input type="submit" class="btn btn-primary" value="提交">
+                </div>
+            </form>
+        </div>
+    <?php
+    }else {
+
     //路由部分开始
     //栏目添加
     if ( isset($_POST['cate_name']) ) {
@@ -61,55 +149,93 @@ $padmin = new Padmin();
         }
     }
     //栏目删除
-    if ( isset($_GET['del']) && is_numeric($_GET['del']) ) {
+    if ( isset($_GET['catedel']) && is_numeric($_GET['catedel']) ) {
         echo $padmin -> DelCate();
     }
     
     //展示部分开始
     //读取分类表
     $cateList = $padmin->GetCateList();
+    $proList = $padmin->GetProductList();
     ?>
-        <div class="cate">
-        <h2>产品分类</h2>
-            <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>id</th>
-                    <th>分类名</th>
-                    <th>栏目uri</th>
-                    <th>权重排序</th>
-                    <th>删除</th>
-                </tr>
-            </thead>
-            <tbody>
-            <?php 
-                //遍历现有分类
-                if (!empty($cateList)) {
-                    foreach ($cateList as $value) {
-            ?>
-                <tr>
-                    <th scope="row"><?=$value['id']?></th>
-                    <td><?=$value['name']?></td>
-                    <td><?=$value['uri']?></td>
-                    <td><input class="weight" type="text" value="<?=$value['weight']?>" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))"></td>
-                    <td><a href="?del=<?=$value['id']?>">删除</a></td>
-                </tr>
-            <?php   }
-                }else {
-                ?>
-                <tr class="warning"><td colspan="4">暂无分类</td></tr>
-            <?php } ?>
-                <tr><td colspan="5">添加分类:</td></tr>
-                <form method="post">
-                <tr class="info">
-                    <th scope="row">添加分类</th>
-                    <td><input name="cate_name" type="text" placeholder="分类名称"></td>
-                    <td colspan="2"><input name="cate_uri" type="text" placeholder="尽量使用英文,会被urlencode转码"></td>
-                    <td><input type="submit" value="提交"></td>
-                </tr>
-                </form>
-            </tbody>
-            </table>
+        <div class="container-fluid">
+            <div class="cate">
+                <h2>产品分类</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>id</th>
+                            <th>分类名</th>
+                            <th>栏目uri</th>
+                            <th>权重排序</th>
+                            <th>删除</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php 
+                        //遍历现有分类
+                        if (!empty($cateList)) {
+                            foreach ($cateList as $value) {
+                    ?>
+                        <tr>
+                            <th scope="row"><?=$value['id']?></th>
+                            <td><?=$value['name']?></td>
+                            <td><?=$value['uri']?></td>
+                            <td><input class="cateweight" data-id="<?=$value['id']?>" type="text" value="<?=$value['weight']?>" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))"></td>
+                            <td><a href="?catedel=<?=$value['id']?>">删除</a></td>
+                        </tr>
+                    <?php   }
+                        }else {
+                        ?>
+                        <tr class="warning"><td colspan="5">暂无分类</td></tr>
+                    <?php } ?>
+                        <tr><td colspan="5">添加分类:</td></tr>
+                        <form method="post">
+                        <tr class="info">
+                            <th scope="row">添加分类</th>
+                            <td><input name="cate_name" type="text" placeholder="分类名称"></td>
+                            <td colspan="2"><input name="cate_uri" type="text" placeholder="尽量使用英文,会被urlencode转码"></td>
+                            <td><input type="submit" class="btn btn-primary" value="提交"></td>
+                        </tr>
+                        </form>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="Product">
+                <h2>产品列表</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>id</th>
+                            <th>名称</th>
+                            <th>分类</th>
+                            <th>权重排序</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php 
+                        //遍历所有产品
+                        if (!empty($proList)) {
+                            foreach ($proList as $value) {
+                    ?>
+                        <tr>
+                            <th scope="row"><?=$value['id']?></th>
+                            <td><?=$value['name']?></td>
+                            <td><?=$value['cate']?></td>
+                            <td><input class="proweight" data-id="<?=$value['id']?>" type="text" value="<?=$value['weight']?>" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))"></td>
+                            <td><a href="?proedit=<?=$value['id']?>">修改</a>&nbsp;&nbsp;<a href="?prodel=<?=$value['id']?>">删除</a></td>
+                        </tr>
+                    <?php   }
+                        }else {
+                        ?>
+                        <tr class="warning"><td colspan="5">暂无产品</td></tr>
+                    <?php } ?>
+                        <tr><td colspan="5"><a class="btn btn-primary" target="_blank" href="?pro=add">添加产品</a></td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
 
@@ -121,8 +247,8 @@ $padmin = new Padmin();
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script>
         $(function () {
-            $(".weight").keyup(function () { 
-                var data = { 'weight': parseInt( $(".weight").val() ) };
+            $(".cateweight").keyup(function () { 
+                var data = { 'cateweight': parseInt( $(this).val() ), 'id': parseInt( $(this).attr("data-id") ) };
                 $.post( window.location.href, data );
             });
         })
@@ -144,8 +270,10 @@ class Padmin
             );
             CREATE TABLE 'Product' (
                 'id'  INTEGER PRIMARY KEY AUTOINCREMENT,
-                'name'  TEXT,
+                'name'  TEXT UNIQUE,
+                'uri'  TEXT UNIQUE,
                 'cate_id' INTEGER,
+                'weight' INTEGER,
                 'intro' TEXT,
                 'application' TEXT,
                 'material' TEXT,
@@ -186,7 +314,7 @@ class Padmin
     public function GetCateList()
     {
         $sql = "SELECT * FROM Cate";
-        return $this->dbh->query($sql);
+        return $this->dbh->query($sql)->fetchAll();
     }
     public function AddCate()
     {
@@ -216,14 +344,26 @@ class Padmin
     }
     public function DelCate()
     {
-        if (is_numeric($_GET['del'])) {
-            $sql = 'DELETE FROM Cate WHERE id = '.$_GET['del'].';';
+        if (is_numeric($_GET['catedel'])) {
+            $sql = 'DELETE FROM Cate WHERE id = '.$_GET['catedel'].';';
             if ($this->dbh->exec($sql)) {
-                return '<p class="text-success">分类'.$_GET['del'].'删除成功</p>';
+                return '<p class="text-success">分类'.$_GET['catedel'].'删除成功</p>';
             }else {
                 return '<p class="text-danger">删除失败</p>';
             }
         }
+    }
+    public function EditWeight()
+    {
+        if (is_numeric($_POST['cateweight'])) {
+            $sql = 'UPDATE Cate SET weight = '.$_POST['cateweight'].'  WHERE id = '.$_POST['id'].';';
+            $this->dbh->exec($sql);
+        }
+    }
+    public function GetProductList(Type $var = null)
+    {
+        $sql = "SELECT * FROM Product";
+        return $this->dbh->query($sql)->fetchAll();
     }
 }
 
