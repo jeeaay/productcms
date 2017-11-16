@@ -249,6 +249,7 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
                             <th scope="row"><?=$value['id']?></th>
                             <td><?=$value['name']?></td>
                             <td><?=$value['cate']?></td>
+                            
                             <td><input class="proweight" data-id="<?=$value['id']?>" type="text" value="<?=$value['weight']?>" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))"></td>
                             <td><a href="?proedit=<?=$value['id']?>">修改</a>&nbsp;&nbsp;<a href="?prodel=<?=$value['id']?>">删除</a></td>
                         </tr>
@@ -400,9 +401,36 @@ class Padmin
             return "产品名称和分类必须填写";
         }else {
             $date['name'] = str_replace( '\'','"', trim($_POST['pro-name']) );
-            $date['cate'] = (int)($_POST['pro-cate']);
+            $date['cate_id'] = (int)($_POST['pro-cate']);
+            if (trim($_POST['pro-capacity']) != "") $date['capacity'] = str_replace( '\'','"', trim($_POST['pro-capacity']) );
+            if (trim($_POST['pro-input']) != "") $date['input'] = str_replace( '\'','"', trim($_POST['pro-input']) );
+            if (trim($_POST['pro-output']) != "") $date['output'] = str_replace( '\'','"', trim($_POST['pro-output']) );
+            if (trim($_POST['pro-intro']) != "") $date['intro'] = str_replace( '\'','"', trim($_POST['pro-intro']) );
+            if (trim($_POST['pro-application']) != "") $date['application'] = str_replace( '\'','"', trim($_POST['pro-application']) );
+            if (trim($_POST['pro-material']) != "") $date['material'] = str_replace( '\'','"', trim($_POST['pro-material']) );
+            if (trim($_POST['pro-overview']) != "") $date['overview'] = str_replace( '\'','"', trim($_POST['pro-overview']) );
+            if (trim($_POST['pro-principle']) != "") $date['principle'] = str_replace( '\'','"', trim($_POST['pro-principle']) );
+            if (trim($_POST['pro-uri']) != "") $date['uri'] = str_replace( '\'','"', trim($_POST['pro-uri']) );
+            if (trim($_POST['pro-specification']) != "") $date['specification'] = str_replace( '\'','"', trim($_POST['pro-specification']) );
+            if (trim($_POST['pro-custom1']) != "") $date['custom1'] = str_replace( '\'','"', trim($_POST['pro-custom1']) );
+            if (trim($_POST['pro-custom2']) != "") $date['custom2'] = str_replace( '\'','"', trim($_POST['pro-custom2']) );
+            if (trim($_POST['pro-custom3']) != "") $date['custom3'] = str_replace( '\'','"', trim($_POST['pro-custom3']) );
+            if (trim($_POST['pro-custom4']) != "") $date['custom4'] = str_replace( '\'','"', trim($_POST['pro-custom4']) );
+            if (trim($_POST['pro-custom5']) != "") $date['custom5'] = str_replace( '\'','"', trim($_POST['pro-custom5']) );
+            if (trim($_POST['pro-custom6']) != "") $date['custom6'] = str_replace( '\'','"', trim($_POST['pro-custom6']) );
+
+            $sql1 = implode(',',array_keys($date));
+            $sql2 = '"'.implode('","',$date).'"';
+            $sql = 'INSERT INTO Product ('.$sql1.') values ('.$sql2.');';
+            if ($this->dbh->exec($sql)) {
+                return '<p class="text-success">产品 '.$_POST['pro-name'].' 添加成功</p> <script>setTimeout(function () {location.href=location.href}, 2000);</script>';
+            }else {
+                return '<p class="text-danger">产品 '.$_POST['pro-name'].' 添加失败</p> <script>setTimeout(function () {location.href=location.href}, 2000);</script>';
+            }
+
         }
     }
 }
 
 ?>
+
