@@ -9,7 +9,7 @@ session_start();
 $psw = '12';
 $padmin = new Padmin();
 //权重修改
-if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST['cateweight']) ) {
+if ( isset($_SESSION['psw']) && ( ( isset($_POST['cateweight']) && is_numeric($_POST['cateweight']) ) || ( isset($_POST['proweight']) && is_numeric($_POST['proweight']) ) ) ) {
     $padmin -> EditWeight();
     header('Content-type:text/json');
     exit(json_encode(['error'=>false]));
@@ -29,7 +29,7 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <style>
-    .cate input{width:95%}
+    .cate input,.pro input{width:95%}
     </style>
     <!--[if lt IE 9]>
       <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -177,7 +177,10 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
     if ( isset($_GET['catedel']) && is_numeric($_GET['catedel']) ) {
         echo $padmin -> DelCate();
     }
-    
+    //产品删除
+    if ( isset($_GET['prodel']) && is_numeric($_GET['prodel']) ) {
+        echo $padmin -> DelPro();
+    }
     //展示部分开始
     //读取分类表
     $cateList = $padmin->GetCateList();
@@ -227,16 +230,16 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
                 </table>
             </div>
 
-            <div class="Product">
+            <div class="pro">
                 <h2>产品列表</h2>
                 <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>id</th>
-                            <th>名称</th>
+                            <th width="200">名称</th>
                             <th>分类</th>
-                            <th>权重排序</th>
-                            <th>操作</th>
+                            <th width="300">权重排序</th>
+                            <th width="100">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -248,7 +251,7 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
                         <tr>
                             <th scope="row"><?=$value['id']?></th>
                             <td><?=$value['name']?></td>
-                            <td><?=$value['cate']?></td>
+                            <td><?=$value['cate_name']?></td>
                             
                             <td><input class="proweight" data-id="<?=$value['id']?>" type="text" value="<?=$value['weight']?>" onkeypress="return (/[\d.]/.test(Math.ceil(String.fromCharCode(event.keyCode))))"></td>
                             <td><a href="?proedit=<?=$value['id']?>">修改</a>&nbsp;&nbsp;<a href="?prodel=<?=$value['id']?>">删除</a></td>
@@ -277,6 +280,11 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
                 var data = { 'cateweight': parseInt( $(this).val() ), 'id': parseInt( $(this).attr("data-id") ) };
                 $.post( window.location.href, data );
             });
+            $(".proweight").keyup(function () { 
+                var data = { 'proweight': parseInt( $(this).val() ), 'id': parseInt( $(this).attr("data-id") ) };
+                $.post( window.location.href, data );
+            });
+            
         })
     </script>
   </body>
@@ -354,7 +362,6 @@ class Padmin
             $cate_uri = urlencode( htmlspecialchars( str_replace( '\'','"', strip_tags( trim($_POST['cate_uri']) ) ) ) );
         }
         //当前id
-        $this->dbh->query("select seq from sqlite_sequence where name='Cate'");
         if ( $res=$this->dbh->query("select seq from sqlite_sequence where name='Cate'") ) {
             $weight = ( $res->fetch()[0] + 1 )* 5;
         }else {
@@ -382,16 +389,31 @@ class Padmin
             }
         }
     }
+    public function DelPro()
+    {
+        if (is_numeric($_GET['prodel'])) {
+            $sql = 'DELETE FROM Product WHERE id = '.$_GET['prodel'].';';
+            if ($this->dbh->exec($sql)) {
+                return '<p class="text-success">分类'.$_GET['prodel'].'删除成功</p>';
+            }else {
+                return '<p class="text-danger">删除失败</p>';
+            }
+        }
+    }
     public function EditWeight()
     {
-        if (is_numeric($_POST['cateweight'])) {
+        if ( isset($_POST['cateweight']) && is_numeric($_POST['cateweight'])) {
             $sql = 'UPDATE Cate SET weight = '.$_POST['cateweight'].'  WHERE id = '.$_POST['id'].';';
-            $this->dbh->exec($sql);
+            return $this->dbh->exec($sql);
+        }
+        if ( isset($_POST['proweight']) && is_numeric($_POST['proweight'])) {
+            $sql = 'UPDATE Product SET weight = '.$_POST['proweight'].'  WHERE id = '.$_POST['id'].';';
+            return $this->dbh->exec($sql);
         }
     }
     public function GetProductList(Type $var = null)
     {
-        $sql = "SELECT * FROM Product";
+        $sql = "SELECT Product.id,Product.name,Cate.name as cate_name,Product.weight from Product inner join Cate on Product.cate_id = Cate.id";
         return $this->dbh->query($sql)->fetchAll();
     }
     public function AddProduct()
@@ -418,9 +440,14 @@ class Padmin
             if (trim($_POST['pro-custom4']) != "") $date['custom4'] = str_replace( '\'','"', trim($_POST['pro-custom4']) );
             if (trim($_POST['pro-custom5']) != "") $date['custom5'] = str_replace( '\'','"', trim($_POST['pro-custom5']) );
             if (trim($_POST['pro-custom6']) != "") $date['custom6'] = str_replace( '\'','"', trim($_POST['pro-custom6']) );
-
-            $sql1 = implode(',',array_keys($date));
-            $sql2 = '"'.implode('","',$date).'"';
+            //当前id
+            if ( $res=$this->dbh->query("select seq from sqlite_sequence where name='Product'") ) {
+                $weight = ( $res->fetch()[0] + 1 )* 5;
+            }else {
+                $weight = 0;
+            }
+            $sql1 = implode(',',array_keys($date)).',weight';
+            $sql2 = '"'.implode('","',$date).'","'.$weight.'"';
             $sql = 'INSERT INTO Product ('.$sql1.') values ('.$sql2.');';
             if ($this->dbh->exec($sql)) {
                 return '<p class="text-success">产品 '.$_POST['pro-name'].' 添加成功</p> <script>setTimeout(function () {location.href=location.href}, 2000);</script>';
