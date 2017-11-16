@@ -14,7 +14,12 @@ if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST
     header('Content-type:text/json');
     exit(json_encode(['error'=>false]));
 }
-
+/* //发布接口
+if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-name']) != "" ) {
+    $padmin -> AddProduct();
+    header('Content-type:text/json');
+    exit(json_encode(['error'=>false]));
+} */
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -54,12 +59,14 @@ if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST
             echo "<script language=JavaScript> location.replace(location.href);</script>";
         } ?>
     <?php } elseif(@$_GET['pro']=="add") {
-        if ( isset($_POST) ) {
-            # code...
-        }
-        
+        if ( isset($_POST['pro-name']) && trim($_POST['pro-name']) != "" ) {
+            echo $padmin->AddProduct();
+        }else{
+            $cateList = $padmin->GetCateList();
     ?>
         <div class="container-fluid">
+            <h3>添加产品</h3>
+            <hr>
             <form method="post" class="row">
                 <div class="col-sm-6">
                     <div class="form-group">
@@ -67,13 +74,17 @@ if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST
                         <input name="pro-name" type="text" class="form-control">
                     </div>
                     <div class="form-group">
-                        <label class="control-label">uri</label>
-                        <input name="pro-uri" type="text" class="form-control" placeholder="可以不填写，尽量使用英文,会被urlencode转码">
+                        <label class="control-label">进料尺寸 input</label>
+                        <input name="pro-input" type="text" class="form-control">
                     </div>
                     
                     <div class="form-group">
+                        <label class="control-label">产量 capacity</label>
+                        <input name="pro-capacity" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
                         <label class="control-label">简介 intro</label>
-                        <textarea name="pro-intro" rows="3" class="form-control"></textarea>
+                        <textarea name="pro-intro" rows="4" class="form-control"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="control-label">应用范围 application</label>
@@ -85,21 +96,34 @@ if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST
                     </div>
                     <div class="form-group">
                         <label class="control-label">产品概览 overview</label>
-                        <textarea name="pro-overview" rows="3" class="form-control"></textarea>
+                        <textarea name="pro-overview" rows="4" class="form-control"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="control-label">工作原理 principle</label>
-                        <textarea name="pro-principle" rows="3" class="form-control"></textarea>
+                        <textarea name="pro-principle" rows="4" class="form-control"></textarea>
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="control-label">栏目分类</label>
                         <select name="pro-cate" class="form-control">
-                            <option>1</option>
+                            
+                        <?php   if ( empty($cateList) ) { ?>
+                            <option>请先添加分类</option>
+                        <?php   }else{
+                                    foreach ($cateList as $value) {?>
+                            <option value="<?=$value['id']?>"><?=$value['name'] == "" ? '请先添加分类' : $value['name'] ?></option>
+                        <?php   }   }?>
                         </select>
                     </div>
-                    
+                    <div class="form-group">
+                        <label class="control-label">出料尺寸 output</label>
+                        <input name="pro-output" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">uri 指产品页面的url，不含.html 例如posuiji crusher 不填写则和名称相同</label>
+                        <input name="pro-uri" type="text" class="form-control" placeholder="可以不填写，会被urlencode转码">
+                    </div>
                     <div class="form-group">
                         <label class="control-label">技术参数 specification</label>
                         <textarea name="pro-specification" rows="2" class="form-control"></textarea>
@@ -136,6 +160,7 @@ if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST
             </form>
         </div>
     <?php
+        }
     }else {
 
     //路由部分开始
@@ -189,7 +214,7 @@ if ( isset($_SESSION['psw']) && isset($_POST['cateweight']) && is_numeric($_POST
                         ?>
                         <tr class="warning"><td colspan="5">暂无分类</td></tr>
                     <?php } ?>
-                        <tr><td colspan="5">添加分类:</td></tr>
+                        
                         <form method="post">
                         <tr class="info">
                             <th scope="row">添加分类</th>
@@ -274,6 +299,9 @@ class Padmin
                 'uri'  TEXT UNIQUE,
                 'cate_id' INTEGER,
                 'weight' INTEGER,
+                'capacity' TEXT,
+                'input' TEXT,
+                'output' TEXT,
                 'intro' TEXT,
                 'application' TEXT,
                 'material' TEXT,
@@ -364,6 +392,16 @@ class Padmin
     {
         $sql = "SELECT * FROM Product";
         return $this->dbh->query($sql)->fetchAll();
+    }
+    public function AddProduct()
+    {
+        $date = [];
+        if (trim($_POST['pro-name']) == "" || trim($_POST['pro-cate']) == "") {
+            return "产品名称和分类必须填写";
+        }else {
+            $date['name'] = str_replace( '\'','"', trim($_POST['pro-name']) );
+            $date['cate'] = (int)($_POST['pro-cate']);
+        }
     }
 }
 
