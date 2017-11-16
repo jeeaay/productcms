@@ -5,8 +5,9 @@
  * @Last Modified by: Jeay
  * @Last Modified time: 2017-11-11 15:27:19
  */
-session_start();
+//访问密码
 $psw = '12';
+session_start();
 $padmin = new Padmin();
 //权重修改
 if ( isset($_SESSION['psw']) && ( ( isset($_POST['cateweight']) && is_numeric($_POST['cateweight']) ) || ( isset($_POST['proweight']) && is_numeric($_POST['proweight']) ) ) ) {
@@ -162,7 +163,6 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
     <?php
         }
     }else {
-
     //路由部分开始
     //栏目添加
     if ( isset($_POST['cate_name']) ) {
@@ -269,7 +269,6 @@ if ( isset($_SESSION['psw']) && isset($_POST['pro-name']) && trim($_POST['pro-na
         
 
     <?php }?>
-
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
